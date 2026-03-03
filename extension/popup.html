@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareerOS</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <span class="logo-text">CareerOS</span>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading" class="state">
+      <div class="spinner"></div>
+      <p>Detecting job info...</p>
+    </div>
+
+    <!-- Already saved state -->
+    <div id="already-saved" class="state hidden">
+      <div class="saved-icon">✓</div>
+      <p class="saved-text">Already saved</p>
+      <p class="saved-sub" id="saved-company"></p>
+      <a href="#" id="view-in-app" class="btn btn-outline" target="_blank">View in App →</a>
+    </div>
+
+    <!-- Main form -->
+    <div id="form-container" class="hidden">
+      <div class="field">
+        <label for="job-title">Job Title</label>
+        <input type="text" id="job-title" placeholder="e.g. Senior Product Manager" />
+      </div>
+      <div class="field">
+        <label for="company">Company</label>
+        <input type="text" id="company" placeholder="e.g. Stripe" />
+      </div>
+      <div class="field">
+        <label for="job-url">URL</label>
+        <input type="url" id="job-url" readonly />
+      </div>
+      <div class="field">
+        <label for="status">Status</label>
+        <select id="status">
+          <option value="bookmarked">Bookmark</option>
+          <option value="applied">Applied</option>
+        </select>
+      </div>
+      <button id="save-btn" class="btn btn-primary">Save Job</button>
+    </div>
+
+    <!-- Success state -->
+    <div id="success" class="state hidden">
+      <div class="saved-icon">✓</div>
+      <p class="saved-text">Job saved!</p>
+      <p class="saved-sub" id="success-company"></p>
+      <a href="#" id="view-in-app-success" class="btn btn-outline" target="_blank">View in App →</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

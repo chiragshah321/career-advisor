@@ -2,7 +2,28 @@ const STORAGE_KEY = 'job_tracker_jobs';
 const QUICKLINKS_KEY = 'job_tracker_quicklinks';
 const APP_URL = 'https://app-black-six-21.vercel.app';
 
-function getQuickLinks(callback) {
+async function getQuickLinks(callback) {
+  // Try to read fresh data from an open app tab via script injection
+  try {
+    const tabs = await chrome.tabs.query({ url: APP_URL + '/*' });
+    if (tabs.length > 0) {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        func: () => {
+          const raw = localStorage.getItem('job_tracker_settings');
+          return raw ? (JSON.parse(raw)?.state?.quickLinks ?? []) : [];
+        },
+      });
+      const links = results?.[0]?.result;
+      if (Array.isArray(links)) {
+        chrome.storage.local.set({ [QUICKLINKS_KEY]: JSON.stringify(links) });
+        callback(links);
+        return;
+      }
+    }
+  } catch (_) {}
+
+  // Fall back to cached chrome.storage.local
   chrome.storage.local.get([QUICKLINKS_KEY], (result) => {
     try {
       const raw = result[QUICKLINKS_KEY];

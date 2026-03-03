@@ -1,8 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist'
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
-// Use CDN worker to avoid bundling the worker
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.5.207/pdf.worker.min.mjs'
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()

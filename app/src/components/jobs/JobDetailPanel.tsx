@@ -41,7 +41,7 @@ export function JobDetailPanel({
     if (!job) return
     setScoringFit(true)
     try {
-      const result = await scoreFit(job.title, job.company, job.url, profileOverride)
+      const result = await scoreFit(job.title, job.company, job.url, profileOverride, job.description)
       setFitScore(job.id, result.fitScore, result.fitReasoning)
       toast.success('Fit score updated')
     } catch (e) {

@@ -46,15 +46,19 @@ export async function scoreFit(
   title: string,
   company: string,
   url: string,
-  profileOverride: string | null
+  profileOverride: string | null,
+  description?: string | null
 ): Promise<{ fitScore: 'strong' | 'good' | 'neutral' | 'weak'; fitReasoning: string }> {
   const profile = getProfile(profileOverride)
-  const system = `You are evaluating job fit for a senior product manager. Score the job as: strong, good, neutral, or weak. Return JSON only — no markdown, no preamble: { "fitScore": string, "fitReasoning": string }. fitReasoning should be 1-2 sentences.
+  const system = `You are evaluating job fit for a candidate. Score the job as: strong, good, neutral, or weak. Return JSON only — no markdown, no preamble: { "fitScore": string, "fitReasoning": string }. fitReasoning should be 1-2 sentences explaining the score.
 
 Candidate profile:
 ${profile}`
 
-  const user = `Job Title: ${title}, Company: ${company}, URL: ${url}`
+  const descriptionSection = description?.trim()
+    ? `\n\nJob Description:\n${description.slice(0, 3000)}`
+    : ''
+  const user = `Job Title: ${title}\nCompany: ${company}\nURL: ${url}${descriptionSection}`
   const text = await callClaude(system, user, 500)
 
   const match = text.match(/\{[\s\S]*\}/)

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import { type Job, type JobStatus, useJobStore } from '@/store/jobStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { scoreFit } from '@/lib/api'
@@ -13,6 +13,18 @@ import { LayoutGrid, List, Plus, Search, X, Building2, ExternalLink } from 'luci
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  useDroppable,
+  useDraggable,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core'
 
 const FIT_ORDER: Record<string, number> = { strong: 0, good: 1, neutral: 2, weak: 3 }
 function fitRank(score: string | null, isScoring: boolean) {
@@ -29,7 +41,7 @@ const COLUMNS: { status: JobStatus; label: string; color: string }[] = [
 ]
 
 export default function Jobs() {
-  const { jobs, setFitScore } = useJobStore()
+  const { jobs, setFitScore, updateStatus } = useJobStore()
   const { apiKey, profileOverride } = useSettingsStore()
   const [view, setView] = useState<'kanban' | 'list'>('kanban')
   const [search, setSearch] = useState('')
@@ -38,12 +50,28 @@ export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [scoringIds, setScoringIds] = useState<Set<string>>(new Set())
+  const [draggingJob, setDraggingJob] = useState<Job | null>(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+
+  function handleDragStart({ active }: DragStartEvent) {
+    setDraggingJob(jobs.find((j) => j.id === active.id) ?? null)
+  }
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    setDraggingJob(null)
+    if (!over) return
+    const job = jobs.find((j) => j.id === active.id)
+    if (!job || job.status === over.id) return
+    updateStatus(job.id, over.id as JobStatus)
+    toast.success(`Moved to ${over.id}`)
+  }
 
   async function autoScore(job: Job) {
     if (!apiKey || !job.url || scoringIds.has(job.id)) return
     setScoringIds((prev) => new Set(prev).add(job.id))
     try {
-      const result = await scoreFit(job.title, job.company, job.url, profileOverride)
+      const result = await scoreFit(job.title, job.company, job.url, profileOverride, job.description)
       setFitScore(job.id, result.fitScore, result.fitReasoning)
     } catch {
       // silent — user can score manually
@@ -146,38 +174,42 @@ export default function Jobs() {
       {/* Kanban */}
       {view === 'kanban' && (
         <div className="flex-1 overflow-x-auto">
-          <div className="flex gap-4 p-6 min-w-max h-full">
-            {COLUMNS.map(({ status, label, color }) => {
-              const colJobs = filtered
-                .filter((j) => j.status === status)
-                .sort((a, b) => fitRank(a.fitScore, scoringIds.has(a.id)) - fitRank(b.fitScore, scoringIds.has(b.id)))
-              return (
-                <div key={status} className="w-64 flex flex-col">
-                  <div
-                    className={cn(
-                      'rounded-t-lg border-t-4 bg-muted/40 px-3 py-2 flex items-center justify-between',
-                      color
-                    )}
-                  >
-                    <span className="text-sm font-semibold">{label}</span>
-                    <span className="text-xs text-muted-foreground bg-background rounded-full px-2 py-0.5">
-                      {colJobs.length}
-                    </span>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="flex gap-4 p-6 min-w-max h-full">
+              {COLUMNS.map(({ status, label, color }) => {
+                const colJobs = filtered
+                  .filter((j) => j.status === status)
+                  .sort((a, b) => fitRank(a.fitScore, scoringIds.has(a.id)) - fitRank(b.fitScore, scoringIds.has(b.id)))
+                return (
+                  <div key={status} className="w-64 flex flex-col">
+                    <div className={cn('rounded-t-lg border-t-4 bg-muted/40 px-3 py-2 flex items-center justify-between', color)}>
+                      <span className="text-sm font-semibold">{label}</span>
+                      <span className="text-xs text-muted-foreground bg-background rounded-full px-2 py-0.5">
+                        {colJobs.length}
+                      </span>
+                    </div>
+                    <KanbanColumn id={status} className="flex-1 rounded-b-lg border border-t-0 bg-muted/20 p-2 space-y-2 overflow-y-auto min-h-[400px]">
+                      {colJobs.map((job) => (
+                        <DraggableCard key={job.id} job={job} isScoring={scoringIds.has(job.id)} onClick={() => setSelectedJob(job)} />
+                      ))}
+                      {colJobs.length === 0 && (
+                        <div className="flex items-center justify-center h-24 text-xs text-muted-foreground">
+                          No jobs
+                        </div>
+                      )}
+                    </KanbanColumn>
                   </div>
-                  <div className="flex-1 rounded-b-lg border border-t-0 bg-muted/20 p-2 space-y-2 overflow-y-auto min-h-[400px]">
-                    {colJobs.map((job) => (
-                      <JobCard key={job.id} job={job} isScoring={scoringIds.has(job.id)} onClick={() => setSelectedJob(job)} />
-                    ))}
-                    {colJobs.length === 0 && (
-                      <div className="flex items-center justify-center h-24 text-xs text-muted-foreground">
-                        No jobs
-                      </div>
-                    )}
-                  </div>
+                )
+              })}
+            </div>
+            <DragOverlay dropAnimation={{ duration: 120, easing: 'ease' }}>
+              {draggingJob && (
+                <div className="rotate-1 opacity-95 shadow-2xl cursor-grabbing w-64">
+                  <JobCard job={draggingJob} isScoring={false} onClick={() => {}} />
                 </div>
-              )
-            })}
-          </div>
+              )}
+            </DragOverlay>
+          </DndContext>
         </div>
       )}
 
@@ -236,6 +268,27 @@ export default function Jobs() {
 
       {/* Add job dialog */}
       <AddJobDialog open={addOpen} onClose={() => setAddOpen(false)} onAdd={autoScore} />
+    </div>
+  )
+}
+
+function KanbanColumn({ id, children, className }: { id: string; children: ReactNode; className?: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+  return (
+    <div ref={setNodeRef} className={cn(className, isOver && 'bg-[#00BFA5]/10 ring-1 ring-inset ring-[#00BFA5]/30 transition-colors')}>
+      {children}
+    </div>
+  )
+}
+
+function DraggableCard({ job, isScoring, onClick }: { job: Job; isScoring: boolean; onClick: () => void }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: job.id })
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes} className="touch-none">
+      {isDragging
+        ? <div className="h-[88px] rounded-lg border-2 border-dashed border-[#00BFA5]/40 bg-[#00BFA5]/5" />
+        : <JobCard job={job} isScoring={isScoring} onClick={onClick} />
+      }
     </div>
   )
 }

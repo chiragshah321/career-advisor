@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useJobStore } from '@/store/jobStore'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { DEFAULT_PROFILE } from '@/lib/profile'
+import { parseProfileFromPDF } from '@/lib/api'
+import { extractTextFromPDF } from '@/lib/parseResume'
 import { toast } from 'sonner'
-import { Eye, EyeOff, Key, Target, User, Palette, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, FileText, Key, Loader2, Target, Upload, User, Palette, Trash2 } from 'lucide-react'
 
 export default function Settings() {
   const {
@@ -29,6 +31,14 @@ export default function Settings() {
   const [localProfile, setLocalProfile] = useState(profileOverride ?? DEFAULT_PROFILE)
   const [clearOpen, setClearOpen] = useState(false)
 
+  const [linkedinFile, setLinkedinFile] = useState<File | null>(null)
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [linkedinLoading, setLinkedinLoading] = useState(false)
+  const [resumeLoading, setResumeLoading] = useState(false)
+
+  const linkedinInputRef = useRef<HTMLInputElement>(null)
+  const resumeInputRef = useRef<HTMLInputElement>(null)
+
   function saveKey() {
     setApiKey(localKey.trim())
     toast.success('API key saved')
@@ -37,6 +47,31 @@ export default function Settings() {
   function saveProfile() {
     setProfileOverride(localProfile.trim() || null)
     toast.success('Profile saved')
+  }
+
+  async function handleParseFromPDF(source: 'linkedin' | 'resume') {
+    const file = source === 'linkedin' ? linkedinFile : resumeFile
+    if (!file) return
+    if (!apiKey) {
+      toast.error('Add your Anthropic API key in Settings first')
+      return
+    }
+
+    const setLoading = source === 'linkedin' ? setLinkedinLoading : setResumeLoading
+    setLoading(true)
+    try {
+      toast.info('Extracting text from PDF...')
+      const text = await extractTextFromPDF(file)
+      if (!text.trim()) throw new Error('Could not extract text from this PDF. Try a text-based PDF.')
+      toast.info('Parsing with AI...')
+      const profile = await parseProfileFromPDF(text, source)
+      setLocalProfile(profile)
+      toast.success('Profile extracted — review and click Save Profile')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to parse PDF')
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleClearAll() {
@@ -187,11 +222,95 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Resume upload placeholder */}
-      <Card className="border-dashed">
-        <CardContent className="px-4 py-6 text-center text-muted-foreground">
-          <p className="text-sm font-medium">Resume / LinkedIn Upload</p>
-          <p className="text-xs mt-1">Upload resume or LinkedIn export — coming soon</p>
+      {/* Profile Import */}
+      <Card>
+        <CardHeader className="pb-2 pt-4 px-4">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            Profile Import
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Upload a PDF to auto-fill your candidate profile above using AI
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 space-y-4">
+          {!apiKey && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              An Anthropic API key is required to parse PDFs. Add it in the API Key section above.
+            </p>
+          )}
+
+          {/* LinkedIn section */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">LinkedIn PDF Export</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => linkedinInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 rounded-md border border-dashed text-sm text-muted-foreground hover:border-[#00BFA5] hover:text-[#00BFA5] transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                {linkedinFile ? linkedinFile.name : 'Choose PDF…'}
+              </button>
+              <input
+                ref={linkedinInputRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={(e) => setLinkedinFile(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                onClick={() => handleParseFromPDF('linkedin')}
+                disabled={!linkedinFile || linkedinLoading}
+                size="sm"
+                className="bg-[#00BFA5] hover:bg-[#00BFA5]/90 text-white gap-1.5"
+              >
+                {linkedinLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Parsing…
+                  </>
+                ) : (
+                  'Parse with AI'
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Resume section */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Resume</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => resumeInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 rounded-md border border-dashed text-sm text-muted-foreground hover:border-[#00BFA5] hover:text-[#00BFA5] transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                {resumeFile ? resumeFile.name : 'Choose PDF…'}
+              </button>
+              <input
+                ref={resumeInputRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                onClick={() => handleParseFromPDF('resume')}
+                disabled={!resumeFile || resumeLoading}
+                size="sm"
+                className="bg-[#00BFA5] hover:bg-[#00BFA5]/90 text-white gap-1.5"
+              >
+                {resumeLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Parsing…
+                  </>
+                ) : (
+                  'Parse with AI'
+                )}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

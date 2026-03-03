@@ -62,6 +62,26 @@ ${profile}`
   return JSON.parse(match[0])
 }
 
+export async function parseProfileFromPDF(
+  text: string,
+  source: 'linkedin' | 'resume'
+): Promise<string> {
+  const sourceLabel = source === 'linkedin' ? 'LinkedIn profile export' : 'resume'
+  const system = `You are a career advisor extracting candidate information from a ${sourceLabel} PDF. Parse the text and return a structured markdown candidate profile. Include these sections where data is available:
+- Name and contact info
+- Current role and company
+- Target roles and industries
+- Years of experience
+- Key technical and soft skills
+- Notable achievements and metrics
+- Education
+
+Return only clean markdown — no preamble, no explanation, no code fences.`
+
+  const user = `Here is the extracted text from the ${sourceLabel}:\n\n${text.slice(0, 8000)}`
+  return callClaude(system, user, 1500)
+}
+
 export async function generateOutreach(
   title: string,
   company: string,

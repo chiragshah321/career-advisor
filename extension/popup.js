@@ -45,7 +45,37 @@ async function getTabInfo() {
           const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
           const jobTitle = ogTitle || h1 || document.title;
 
-          return { company, jobTitle };
+          // Extract job description from common selectors
+          const descSelectors = [
+            '[data-testid="job-description"]',
+            '#job-description',
+            '.job-description',
+            '#jobDescriptionText',          // Indeed
+            '.jobs-description__content',  // LinkedIn
+            '.description__text',          // LinkedIn alt
+            '.posting-content',            // Lever
+            '[class*="jobDescription"]',
+            '[class*="job-details"]',
+            'article',
+          ];
+          let description = '';
+          for (const sel of descSelectors) {
+            const el = document.querySelector(sel);
+            if (el && el.innerText.trim().length > 100) {
+              description = el.innerText.trim();
+              break;
+            }
+          }
+          // Fallback: largest block of text under 15k chars
+          if (!description) {
+            let maxLen = 0;
+            document.querySelectorAll('section, main, .content, [class*="content"]').forEach((el) => {
+              const t = el.innerText?.trim() || '';
+              if (t.length > maxLen && t.length < 15000) { maxLen = t.length; description = t; }
+            });
+          }
+
+          return { company, jobTitle, description: description.slice(0, 4000) };
         }
       }, (results) => {
         const extracted = results?.[0]?.result ?? {};
@@ -54,6 +84,7 @@ async function getTabInfo() {
           title: tab.title ?? '',
           extractedTitle: extracted.jobTitle ?? tab.title ?? '',
           extractedCompany: extracted.company ?? '',
+          extractedDescription: extracted.description ?? '',
         });
       });
     });
@@ -163,6 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       title,
       company,
       url: jobUrl,
+      description: tabInfo.extractedDescription || null,
       status,
       fitScore: null,
       fitReasoning: '',

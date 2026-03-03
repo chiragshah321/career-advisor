@@ -34,6 +34,7 @@ export interface Job {
   dateApplied: string | null
   recruiterOutreach: string | null
   weekApplied: string | null
+  description: string | null
 }
 
 interface JobStore {

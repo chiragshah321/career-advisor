@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
   ExternalLink, Sparkles, Copy, Trash2, Plus, Calendar, Clock,
-  User, Linkedin, FileText, DollarSign,
+  User, Linkedin, FileText, DollarSign, AlignLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -188,6 +188,19 @@ export function JobDetailPanel({
                   <p>{job.fitReasoning}</p>
                 </div>
               )}
+
+              {/* Description */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1 mb-1.5">
+                  <AlignLeft className="w-3.5 h-3.5" /> Description
+                </label>
+                <Textarea
+                  value={job.description ?? ''}
+                  onChange={(e) => updateJob(job.id, { description: e.target.value || null })}
+                  placeholder="Paste the job description here…"
+                  className="min-h-[120px] text-sm"
+                />
+              </div>
 
               {/* Salary */}
               <div>

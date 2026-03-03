@@ -245,6 +245,7 @@ function AddJobDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => 
   const [title, setTitle] = useState('')
   const [company, setCompany] = useState('')
   const [url, setUrl] = useState('')
+  const [description, setDescription] = useState('')
   const [status, setStatus] = useState<JobStatus>('bookmarked')
 
   function handleSubmit() {
@@ -256,6 +257,7 @@ function AddJobDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => 
       title,
       company,
       url,
+      description: description.trim() || null,
       status,
       fitScore: null,
       fitReasoning: '',
@@ -271,6 +273,7 @@ function AddJobDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => 
     setTitle('')
     setCompany('')
     setUrl('')
+    setDescription('')
     setStatus('bookmarked')
     onClose()
   }
@@ -302,6 +305,13 @@ function AddJobDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             className="w-full h-10 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA5]/50 placeholder:text-muted-foreground"
+          />
+          <textarea
+            placeholder="Job description (optional — paste from listing)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA5]/50 placeholder:text-muted-foreground resize-y"
           />
           <Select value={status} onValueChange={(v) => setStatus(v as JobStatus)}>
             <SelectTrigger className="h-10">

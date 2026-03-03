@@ -9,7 +9,7 @@ import { DEFAULT_PROFILE } from '@/lib/profile'
 import { parseProfileFromPDF } from '@/lib/api'
 import { extractTextFromPDF } from '@/lib/parseResume'
 import { toast } from 'sonner'
-import { CheckCircle2, Eye, EyeOff, FileText, Key, Loader2, Link, Plus, Target, Upload, User, Palette, Trash2, X } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Eye, EyeOff, FileText, Key, Loader2, Link, Plus, Target, Upload, User, Palette, Trash2, X } from 'lucide-react'
 
 export default function Settings() {
   const {
@@ -28,6 +28,14 @@ export default function Settings() {
     removeQuickLink,
   } = useSettingsStore()
   const { clearAll } = useJobStore()
+
+  const CARDS = ['api-key', 'weekly-target', 'theme', 'fit-prefs', 'profile', 'profile-import', 'quick-links', 'danger'] as const
+  type CardId = typeof CARDS[number]
+  const [open, setOpen] = useState<Record<CardId, boolean>>({
+    'api-key': false, 'weekly-target': false, theme: false, 'fit-prefs': false,
+    profile: false, 'profile-import': false, 'quick-links': false, danger: false,
+  })
+  function toggle(id: CardId) { setOpen((prev) => ({ ...prev, [id]: !prev[id] })) }
 
   const [showKey, setShowKey] = useState(false)
   const [localKey, setLocalKey] = useState(apiKey)
@@ -112,16 +120,16 @@ export default function Settings() {
 
       {/* API Key */}
       <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('api-key')}>
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Key className="w-4 h-4" />
             Anthropic API Key
+            <ChevronDown className={`w-4 h-4 ml-auto text-muted-foreground transition-transform ${open['api-key'] ? 'rotate-180' : ''}`} />
           </CardTitle>
-          <CardDescription className="text-xs">
-            Required for AI fit scoring and outreach generation
-          </CardDescription>
+          {!open['api-key'] && apiKey && <CardDescription className="text-xs text-green-600 dark:text-green-400">Configured</CardDescription>}
+          {!open['api-key'] && !apiKey && <CardDescription className="text-xs">Required for AI fit scoring and outreach generation</CardDescription>}
         </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-2">
+        {open['api-key'] && <CardContent className="px-4 pb-4 space-y-2">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input
@@ -143,18 +151,20 @@ export default function Settings() {
             </Button>
           </div>
           {apiKey && <p className="text-xs text-green-600 dark:text-green-400">API key configured</p>}
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Weekly target */}
       <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('weekly-target')}>
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Target className="w-4 h-4" />
             Weekly Application Goal
+            <ChevronDown className={`w-4 h-4 ml-auto text-muted-foreground transition-transform ${open['weekly-target'] ? 'rotate-180' : ''}`} />
           </CardTitle>
+          {!open['weekly-target'] && <CardDescription className="text-xs">{weeklyTarget} applications per week</CardDescription>}
         </CardHeader>
-        <CardContent className="px-4 pb-4 flex items-center gap-3">
+        {open['weekly-target'] && <CardContent className="px-4 pb-4 flex items-center gap-3">
           <input
             type="number"
             min={1}
@@ -164,18 +174,20 @@ export default function Settings() {
             className="w-20 h-10 px-3 rounded-md border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#00BFA5]/50"
           />
           <span className="text-sm text-muted-foreground">applications per week</span>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Theme */}
       <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('theme')}>
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Palette className="w-4 h-4" />
             Theme
+            <ChevronDown className={`w-4 h-4 ml-auto text-muted-foreground transition-transform ${open['theme'] ? 'rotate-180' : ''}`} />
           </CardTitle>
+          {!open['theme'] && <CardDescription className="text-xs capitalize">{theme} mode</CardDescription>}
         </CardHeader>
-        <CardContent className="px-4 pb-4 flex items-center gap-3">
+        {open['theme'] && <CardContent className="px-4 pb-4 flex items-center gap-3">
           <button
             onClick={() => setTheme('light')}
             className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
@@ -196,16 +208,19 @@ export default function Settings() {
           >
             Dark
           </button>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Fit preferences */}
       <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold">Fit Preferences</CardTitle>
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('fit-prefs')}>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            Fit Preferences
+            <ChevronDown className={`w-4 h-4 ml-auto text-muted-foreground transition-transform ${open['fit-prefs'] ? 'rotate-180' : ''}`} />
+          </CardTitle>
           <CardDescription className="text-xs">Prioritize these domains in AI scoring</CardDescription>
         </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-3">
+        {open['fit-prefs'] && <CardContent className="px-4 pb-4 space-y-3">
           {(Object.keys(fitPreferences) as (keyof typeof fitPreferences)[]).map((key) => (
             <div key={key} className="flex items-center justify-between">
               <span className="text-sm capitalize">{key}</span>
@@ -215,7 +230,7 @@ export default function Settings() {
               />
             </div>
           ))}
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Profile editor */}
@@ -223,11 +238,12 @@ export default function Settings() {
         ref={profileCardRef}
         className={profileJustUpdated ? 'ring-2 ring-[#00BFA5] transition-shadow duration-300' : 'transition-shadow duration-300'}
       >
-        <CardHeader className="pb-2 pt-4 px-4">
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('profile')}>
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <User className="w-4 h-4" />
               Candidate Profile
+              <ChevronDown className={`w-4 h-4 ml-auto text-muted-foreground transition-transform ${open['profile'] ? 'rotate-180' : ''}`} />
             </CardTitle>
             {profileJustUpdated && profileUpdatedFrom && (
               <span className="flex items-center gap-1 text-xs text-[#00BFA5] font-medium">
@@ -243,10 +259,10 @@ export default function Settings() {
             )}
           </div>
           <CardDescription className="text-xs">
-            This is used by AI to score fit and generate outreach
+            {profileOverride ? 'Profile configured — click to edit' : 'This is used by AI to score fit and generate outreach'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-2">
+        {open['profile'] && <CardContent className="px-4 pb-4 space-y-2">
           <div className="relative">
             <textarea
               value={localProfile}
@@ -271,21 +287,22 @@ export default function Settings() {
           >
             Save Profile
           </Button>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Profile Import */}
       <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('profile-import')}>
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Upload className="w-4 h-4" />
             Profile Import
+            <ChevronDown className={`w-4 h-4 ml-auto text-muted-foreground transition-transform ${open['profile-import'] ? 'rotate-180' : ''}`} />
           </CardTitle>
           <CardDescription className="text-xs">
             Upload a PDF to auto-fill your candidate profile above using AI
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-4">
+        {open['profile-import'] && <CardContent className="px-4 pb-4 space-y-4">
           {!apiKey && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
               An Anthropic API key is required to parse PDFs. Add it in the API Key section above.
@@ -363,21 +380,22 @@ export default function Settings() {
               </Button>
             </div>
           </div>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Quick Links */}
       <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('quick-links')}>
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Link className="w-4 h-4" />
             Quick Links
+            <ChevronDown className={`w-4 h-4 ml-auto text-muted-foreground transition-transform ${open['quick-links'] ? 'rotate-180' : ''}`} />
           </CardTitle>
           <CardDescription className="text-xs">
-            Saved job search URLs — open all as a Chrome tab group from the extension
+            {quickLinks.length > 0 ? `${quickLinks.length} link${quickLinks.length !== 1 ? 's' : ''} saved` : 'Saved job search URLs — open all as a Chrome tab group from the extension'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-3">
+        {open['quick-links'] && <CardContent className="px-4 pb-4 space-y-3">
           {quickLinks.length > 0 && (
             <div className="space-y-1.5">
               {quickLinks.map((link) => (
@@ -424,18 +442,19 @@ export default function Settings() {
           {quickLinks.length === 0 && (
             <p className="text-xs text-muted-foreground">No links yet — add job board URLs above</p>
           )}
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Danger zone */}
       <Card className="border-destructive/30">
-        <CardHeader className="pb-2 pt-4 px-4">
+        <CardHeader className="pb-2 pt-4 px-4 cursor-pointer select-none" onClick={() => toggle('danger')}>
           <CardTitle className="text-sm font-semibold flex items-center gap-2 text-destructive">
             <Trash2 className="w-4 h-4" />
             Danger Zone
+            <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${open['danger'] ? 'rotate-180' : ''}`} />
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
+        {open['danger'] && <CardContent className="px-4 pb-4">
           <Button
             variant="destructive"
             onClick={() => setClearOpen(true)}
@@ -444,7 +463,7 @@ export default function Settings() {
             <Trash2 className="w-4 h-4" />
             Clear All Data
           </Button>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       <Dialog open={clearOpen} onOpenChange={setClearOpen}>

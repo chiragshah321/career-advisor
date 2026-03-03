@@ -1,4 +1,4 @@
-// Content script: runs on the Rassel app page before the app initializes.
+// Content script: runs on the Career Advisor app page before the app initializes.
 // Bridges jobs saved by the extension popup (chrome.storage.local) into the
 // app's localStorage, which is where Zustand persist reads from.
 // Also syncs quick links from app localStorage → chrome.storage.local so
@@ -16,7 +16,7 @@ try {
     chrome.storage.local.set({ [QUICKLINKS_KEY]: JSON.stringify(links) });
   }
 } catch (e) {
-  console.error('[Rassel] quick links sync error:', e);
+  console.error('[Career Advisor] quick links sync error:', e);
 }
 
 chrome.storage.local.get([STORAGE_KEY], (result) => {

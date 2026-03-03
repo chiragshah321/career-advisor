@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Rassel - Career Advisor",
+  "name": "Career Advisor",
   "version": "1.1.0",
   "description": "Save jobs and open quick-link tab groups with one click.",
   "action": {

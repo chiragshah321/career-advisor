@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'job_tracker_jobs';
-const APP_URL = 'http://localhost:5173'; // update for production
+const APP_URL = 'https://app-black-six-21.vercel.app';
 
 function generateId() {
   return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);

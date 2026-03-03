@@ -2,14 +2,14 @@ import { type Job, type JobStatus, useJobStore } from '@/store/jobStore'
 import { StatusBadge } from './StatusBadge'
 import { FitBadge } from './FitBadge'
 import { formatDistanceToNow } from 'date-fns'
-import { Building2, ExternalLink } from 'lucide-react'
+import { Building2, ExternalLink, Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 const STATUSES: JobStatus[] = ['bookmarked', 'applied', 'interviewed', 'offer', 'archived']
 
-export function JobCard({ job, onClick }: { job: Job; onClick: () => void }) {
+export function JobCard({ job, isScoring, onClick }: { job: Job; isScoring?: boolean; onClick: () => void }) {
   const { updateStatus } = useJobStore()
 
   function handleStatusChange(status: string) {
@@ -45,7 +45,14 @@ export function JobCard({ job, onClick }: { job: Job; onClick: () => void }) {
       </div>
 
       <div className="flex items-center gap-1.5 mb-2">
-        <FitBadge score={job.fitScore} />
+        {isScoring ? (
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Scoring…
+          </span>
+        ) : (
+          <FitBadge score={job.fitScore} />
+        )}
       </div>
 
       <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>

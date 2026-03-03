@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import { type Job, type JobStatus, useJobStore } from '@/store/jobStore'
+import { useSettingsStore } from '@/store/settingsStore'
+import { scoreFit } from '@/lib/api'
 import { JobCard } from '@/components/jobs/JobCard'
 import { JobDetailPanel } from '@/components/jobs/JobDetailPanel'
 import { StatusBadge } from '@/components/jobs/StatusBadge'
@@ -12,6 +14,12 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 
+const FIT_ORDER: Record<string, number> = { strong: 0, good: 1, neutral: 2, weak: 3 }
+function fitRank(score: string | null, isScoring: boolean) {
+  if (isScoring) return -1 // scoring jobs float to top temporarily
+  return score != null ? (FIT_ORDER[score] ?? 3) : 4
+}
+
 const COLUMNS: { status: JobStatus; label: string; color: string }[] = [
   { status: 'bookmarked', label: 'Bookmarked', color: 'border-t-slate-400' },
   { status: 'applied', label: 'Applied', color: 'border-t-blue-500' },
@@ -21,13 +29,32 @@ const COLUMNS: { status: JobStatus; label: string; color: string }[] = [
 ]
 
 export default function Jobs() {
-  const { jobs } = useJobStore()
+  const { jobs, setFitScore } = useJobStore()
+  const { apiKey, profileOverride } = useSettingsStore()
   const [view, setView] = useState<'kanban' | 'list'>('kanban')
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterFit, setFilterFit] = useState<string>('all')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [scoringIds, setScoringIds] = useState<Set<string>>(new Set())
+
+  async function autoScore(job: Job) {
+    if (!apiKey || !job.url || scoringIds.has(job.id)) return
+    setScoringIds((prev) => new Set(prev).add(job.id))
+    try {
+      const result = await scoreFit(job.title, job.company, job.url, profileOverride)
+      setFitScore(job.id, result.fitScore, result.fitReasoning)
+    } catch {
+      // silent — user can score manually
+    } finally {
+      setScoringIds((prev) => {
+        const next = new Set(prev)
+        next.delete(job.id)
+        return next
+      })
+    }
+  }
 
   const filtered = useMemo(() => {
     return jobs.filter((j) => {
@@ -121,7 +148,9 @@ export default function Jobs() {
         <div className="flex-1 overflow-x-auto">
           <div className="flex gap-4 p-6 min-w-max h-full">
             {COLUMNS.map(({ status, label, color }) => {
-              const colJobs = filtered.filter((j) => j.status === status)
+              const colJobs = filtered
+                .filter((j) => j.status === status)
+                .sort((a, b) => fitRank(a.fitScore, scoringIds.has(a.id)) - fitRank(b.fitScore, scoringIds.has(b.id)))
               return (
                 <div key={status} className="w-64 flex flex-col">
                   <div
@@ -137,7 +166,7 @@ export default function Jobs() {
                   </div>
                   <div className="flex-1 rounded-b-lg border border-t-0 bg-muted/20 p-2 space-y-2 overflow-y-auto min-h-[400px]">
                     {colJobs.map((job) => (
-                      <JobCard key={job.id} job={job} onClick={() => setSelectedJob(job)} />
+                      <JobCard key={job.id} job={job} isScoring={scoringIds.has(job.id)} onClick={() => setSelectedJob(job)} />
                     ))}
                     {colJobs.length === 0 && (
                       <div className="flex items-center justify-center h-24 text-xs text-muted-foreground">
@@ -206,12 +235,12 @@ export default function Jobs() {
       />
 
       {/* Add job dialog */}
-      <AddJobDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddJobDialog open={addOpen} onClose={() => setAddOpen(false)} onAdd={autoScore} />
     </div>
   )
 }
 
-function AddJobDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function AddJobDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (job: Job) => void }) {
   const { addJob } = useJobStore()
   const [title, setTitle] = useState('')
   const [company, setCompany] = useState('')
@@ -223,7 +252,7 @@ function AddJobDialog({ open, onClose }: { open: boolean; onClose: () => void })
       toast.error('Title and company are required')
       return
     }
-    addJob({
+    const job = addJob({
       title,
       company,
       url,
@@ -238,6 +267,7 @@ function AddJobDialog({ open, onClose }: { open: boolean; onClose: () => void })
       recruiterOutreach: null,
     })
     toast.success('Job added!')
+    onAdd(job)
     setTitle('')
     setCompany('')
     setUrl('')

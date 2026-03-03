@@ -9,7 +9,7 @@ import { DEFAULT_PROFILE } from '@/lib/profile'
 import { parseProfileFromPDF } from '@/lib/api'
 import { extractTextFromPDF } from '@/lib/parseResume'
 import { toast } from 'sonner'
-import { Eye, EyeOff, FileText, Key, Loader2, Target, Upload, User, Palette, Trash2 } from 'lucide-react'
+import { CheckCircle2, Eye, EyeOff, FileText, Key, Loader2, Target, Upload, User, Palette, Trash2 } from 'lucide-react'
 
 export default function Settings() {
   const {
@@ -38,6 +38,11 @@ export default function Settings() {
 
   const linkedinInputRef = useRef<HTMLInputElement>(null)
   const resumeInputRef = useRef<HTMLInputElement>(null)
+  const profileCardRef = useRef<HTMLDivElement>(null)
+  const [profileJustUpdated, setProfileJustUpdated] = useState(false)
+  const [profileUpdatedFrom, setProfileUpdatedFrom] = useState<'linkedin' | 'resume' | null>(null)
+
+  const isParsingProfile = linkedinLoading || resumeLoading
 
   function saveKey() {
     setApiKey(localKey.trim())
@@ -66,6 +71,10 @@ export default function Settings() {
       toast.info('Parsing with AI...')
       const profile = await parseProfileFromPDF(text, source)
       setLocalProfile(profile)
+      setProfileUpdatedFrom(source)
+      setProfileJustUpdated(true)
+      profileCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setTimeout(() => setProfileJustUpdated(false), 2500)
       toast.success('Profile extracted — review and click Save Profile')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to parse PDF')
@@ -196,25 +205,54 @@ export default function Settings() {
       </Card>
 
       {/* Profile editor */}
-      <Card>
+      <Card
+        ref={profileCardRef}
+        className={profileJustUpdated ? 'ring-2 ring-[#00BFA5] transition-shadow duration-300' : 'transition-shadow duration-300'}
+      >
         <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <User className="w-4 h-4" />
-            Candidate Profile
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Candidate Profile
+            </CardTitle>
+            {profileJustUpdated && profileUpdatedFrom && (
+              <span className="flex items-center gap-1 text-xs text-[#00BFA5] font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Updated from {profileUpdatedFrom === 'linkedin' ? 'LinkedIn' : 'Resume'}
+              </span>
+            )}
+            {isParsingProfile && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Generating profile…
+              </span>
+            )}
+          </div>
           <CardDescription className="text-xs">
             This is used by AI to score fit and generate outreach
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-2">
-          <textarea
-            value={localProfile}
-            onChange={(e) => setLocalProfile(e.target.value)}
-            rows={10}
-            className="w-full px-3 py-2 rounded-md border bg-background text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00BFA5]/50 resize-y"
-          />
+          <div className="relative">
+            <textarea
+              value={localProfile}
+              onChange={(e) => setLocalProfile(e.target.value)}
+              rows={10}
+              disabled={isParsingProfile}
+              className={`w-full px-3 py-2 rounded-md border bg-background text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00BFA5]/50 resize-y transition-opacity ${isParsingProfile ? 'opacity-40 cursor-not-allowed' : ''}`}
+            />
+            {isParsingProfile && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-md">
+                <div className="flex items-center gap-2 bg-background/80 px-3 py-1.5 rounded-full border text-xs text-muted-foreground">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  AI is writing your profile…
+                </div>
+              </div>
+            )}
+          </div>
           <Button
             onClick={saveProfile}
+            disabled={isParsingProfile}
             className="bg-[#00BFA5] hover:bg-[#00BFA5]/90 text-white"
           >
             Save Profile

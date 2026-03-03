@@ -1,5 +1,57 @@
 const STORAGE_KEY = 'job_tracker_jobs';
+const QUICKLINKS_KEY = 'job_tracker_quicklinks';
 const APP_URL = 'https://app-black-six-21.vercel.app';
+
+function getQuickLinks(callback) {
+  chrome.storage.local.get([QUICKLINKS_KEY], (result) => {
+    try {
+      const raw = result[QUICKLINKS_KEY];
+      const links = raw ? JSON.parse(raw) : [];
+      callback(Array.isArray(links) ? links : []);
+    } catch {
+      callback([]);
+    }
+  });
+}
+
+async function openTabGroup(links) {
+  if (!links.length) return;
+  const tabIds = [];
+  for (const link of links) {
+    const tab = await chrome.tabs.create({ url: link.url, active: false });
+    tabIds.push(tab.id);
+  }
+  const groupId = await chrome.tabs.group({ tabIds });
+  await chrome.tabGroups.update(groupId, { title: 'Job Search', color: 'teal', collapsed: false });
+  chrome.tabs.update(tabIds[0], { active: true });
+  window.close();
+}
+
+function renderQuickLinks(links) {
+  const section = document.getElementById('quick-links-section');
+  const list = document.getElementById('quick-links-list');
+  const count = document.getElementById('quick-links-count');
+  const btn = document.getElementById('open-tab-group-btn');
+  const noLinks = document.getElementById('no-quick-links');
+
+  section.classList.remove('hidden');
+  count.textContent = links.length;
+
+  if (links.length === 0) {
+    btn.classList.add('hidden');
+    noLinks.classList.remove('hidden');
+    return;
+  }
+
+  noLinks.classList.add('hidden');
+  btn.classList.remove('hidden');
+
+  list.innerHTML = links.map((l) =>
+    `<div class="quick-link-item"><span class="quick-link-dot"></span>${l.name}</div>`
+  ).join('');
+
+  btn.addEventListener('click', () => openTabGroup(links));
+}
 
 function generateId() {
   return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -169,6 +221,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // View in app links
   document.getElementById('view-in-app-success').href = APP_URL + '/jobs';
+
+  // Quick links
+  getQuickLinks(renderQuickLinks);
 
   // Save button
   document.getElementById('save-btn').addEventListener('click', () => {

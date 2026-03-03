@@ -1,8 +1,23 @@
-// Content script: runs on the CareerOS app page before the app initializes.
+// Content script: runs on the Rassel app page before the app initializes.
 // Bridges jobs saved by the extension popup (chrome.storage.local) into the
 // app's localStorage, which is where Zustand persist reads from.
+// Also syncs quick links from app localStorage → chrome.storage.local so
+// the popup can open them as a tab group.
 
 const STORAGE_KEY = 'job_tracker_jobs';
+const SETTINGS_KEY = 'job_tracker_settings';
+const QUICKLINKS_KEY = 'job_tracker_quicklinks';
+
+// Sync quick links: app localStorage → chrome.storage.local
+try {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (raw) {
+    const links = JSON.parse(raw)?.state?.quickLinks ?? [];
+    chrome.storage.local.set({ [QUICKLINKS_KEY]: JSON.stringify(links) });
+  }
+} catch (e) {
+  console.error('[Rassel] quick links sync error:', e);
+}
 
 chrome.storage.local.get([STORAGE_KEY], (result) => {
   const raw = result[STORAGE_KEY];

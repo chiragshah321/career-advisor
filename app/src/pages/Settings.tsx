@@ -9,7 +9,7 @@ import { DEFAULT_PROFILE } from '@/lib/profile'
 import { parseProfileFromPDF } from '@/lib/api'
 import { extractTextFromPDF } from '@/lib/parseResume'
 import { toast } from 'sonner'
-import { CheckCircle2, Eye, EyeOff, FileText, Key, Loader2, Target, Upload, User, Palette, Trash2 } from 'lucide-react'
+import { CheckCircle2, Eye, EyeOff, FileText, Key, Loader2, Link, Plus, Target, Upload, User, Palette, Trash2, X } from 'lucide-react'
 
 export default function Settings() {
   const {
@@ -23,6 +23,9 @@ export default function Settings() {
     setProfileOverride,
     fitPreferences,
     setFitPreference,
+    quickLinks,
+    addQuickLink,
+    removeQuickLink,
   } = useSettingsStore()
   const { clearAll } = useJobStore()
 
@@ -30,6 +33,17 @@ export default function Settings() {
   const [localKey, setLocalKey] = useState(apiKey)
   const [localProfile, setLocalProfile] = useState(profileOverride ?? DEFAULT_PROFILE)
   const [clearOpen, setClearOpen] = useState(false)
+  const [newLinkName, setNewLinkName] = useState('')
+  const [newLinkUrl, setNewLinkUrl] = useState('')
+
+  function handleAddLink() {
+    const name = newLinkName.trim()
+    const url = newLinkUrl.trim()
+    if (!name || !url) return
+    addQuickLink({ name, url: url.startsWith('http') ? url : `https://${url}` })
+    setNewLinkName('')
+    setNewLinkUrl('')
+  }
 
   const [linkedinFile, setLinkedinFile] = useState<File | null>(null)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
@@ -349,6 +363,67 @@ export default function Settings() {
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Links */}
+      <Card>
+        <CardHeader className="pb-2 pt-4 px-4">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Link className="w-4 h-4" />
+            Quick Links
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Saved job search URLs — open all as a Chrome tab group from the extension
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 space-y-3">
+          {quickLinks.length > 0 && (
+            <div className="space-y-1.5">
+              {quickLinks.map((link) => (
+                <div key={link.id} className="flex items-center gap-2 group">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{link.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                  </div>
+                  <button
+                    onClick={() => removeQuickLink(link.id)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Name (e.g. LinkedIn Jobs)"
+              value={newLinkName}
+              onChange={(e) => setNewLinkName(e.target.value)}
+              className="flex-1 h-9 px-3 rounded-md border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00BFA5]/50"
+            />
+            <input
+              type="url"
+              placeholder="URL"
+              value={newLinkUrl}
+              onChange={(e) => setNewLinkUrl(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
+              className="flex-1 h-9 px-3 rounded-md border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00BFA5]/50"
+            />
+            <Button
+              onClick={handleAddLink}
+              disabled={!newLinkName.trim() || !newLinkUrl.trim()}
+              size="sm"
+              className="bg-[#00BFA5] hover:bg-[#00BFA5]/90 text-white h-9 px-3"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          {quickLinks.length === 0 && (
+            <p className="text-xs text-muted-foreground">No links yet — add job board URLs above</p>
+          )}
         </CardContent>
       </Card>
 

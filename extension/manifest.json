@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "CareerOS - Job Tracker",
-  "version": "1.0.0",
-  "description": "Save jobs to CareerOS with one click from any job listing page",
+  "name": "Rassel - Career Advisor",
+  "version": "1.1.0",
+  "description": "Save jobs and open quick-link tab groups with one click.",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -11,7 +11,7 @@
       "128": "icon128.png"
     }
   },
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": ["activeTab", "storage", "scripting", "tabs", "tabGroups"],
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {

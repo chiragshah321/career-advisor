@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CareerOS</title>
+  <title>Rassel</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
@@ -11,8 +11,8 @@
     <!-- Header -->
     <div class="header">
       <div class="logo">
-        <div class="logo-icon">⚡</div>
-        <span class="logo-text">CareerOS</span>
+        <img src="icon48.png" alt="Rassel" class="logo-icon-img" />
+        <span class="logo-text">Rassel</span>
       </div>
     </div>
 
@@ -60,6 +60,19 @@
       <p class="saved-text">Job saved!</p>
       <p class="saved-sub" id="success-company"></p>
       <a href="#" id="view-in-app-success" class="btn btn-outline" target="_blank">View in App →</a>
+    </div>
+
+    <!-- Quick Links section (always visible after load) -->
+    <div id="quick-links-section" class="quick-links hidden">
+      <div class="quick-links-header">
+        <span class="quick-links-label">Quick Links</span>
+        <span id="quick-links-count" class="quick-links-count"></span>
+      </div>
+      <div id="quick-links-list" class="quick-links-list"></div>
+      <button id="open-tab-group-btn" class="btn btn-primary">Open all in tab group</button>
+      <p id="no-quick-links" class="no-links hidden">
+        Add job search URLs in Settings → Quick Links
+      </p>
     </div>
   </div>
 

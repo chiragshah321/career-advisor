@@ -2,7 +2,6 @@ import { Routes, Route, NavLink } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { LayoutDashboard, Briefcase, Brain, BarChart3, Settings, Zap } from 'lucide-react'
 import { useSettingsStore } from '@/store/settingsStore'
-import { useJobStore } from '@/store/jobStore'
 import { useEffect } from 'react'
 import Dashboard from '@/pages/Dashboard'
 import Jobs from '@/pages/Jobs'
@@ -18,44 +17,8 @@ const NAV = [
   { to: '/reports', label: 'Reports', icon: BarChart3 },
 ]
 
-const STORAGE_KEY = 'job_tracker_jobs'
-
-// Sync jobs saved by the Chrome extension (chrome.storage.local) into the app's localStorage store.
-// The extension can't write to page localStorage directly, so it uses chrome.storage.local as a bridge.
-function useChromeStorageSync() {
-  useEffect(() => {
-    const chromeStorage = (globalThis as unknown as { chrome?: { storage?: { local?: { get: (keys: string[], cb: (r: Record<string, unknown>) => void) => void; remove: (key: string) => void } } } }).chrome?.storage?.local
-    if (!chromeStorage) return
-
-    chromeStorage.get([STORAGE_KEY], (result) => {
-      const raw = result[STORAGE_KEY]
-      if (!raw) return
-      try {
-        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-        const incoming = parsed?.state?.jobs ?? []
-        if (!incoming.length) return
-
-        useJobStore.setState((state) => {
-          const existingIds = new Set(state.jobs.map((j) => j.id))
-          const existingUrls = new Set(state.jobs.map((j) => j.url))
-          const newJobs = incoming.filter(
-            (j: { id: string; url: string }) => !existingIds.has(j.id) && !existingUrls.has(j.url)
-          )
-          if (!newJobs.length) return state
-          return { jobs: [...newJobs, ...state.jobs] }
-        })
-
-        chromeStorage.remove(STORAGE_KEY)
-      } catch {
-        // ignore malformed data
-      }
-    })
-  }, [])
-}
-
 export default function App() {
   const { apiKey, theme } = useSettingsStore()
-  useChromeStorageSync()
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')

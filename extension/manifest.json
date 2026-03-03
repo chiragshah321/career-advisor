@@ -13,6 +13,13 @@
   },
   "permissions": ["activeTab", "storage", "scripting"],
   "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["https://app-black-six-21.vercel.app/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",

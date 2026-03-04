@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
   ExternalLink, Sparkles, Copy, Trash2, Plus, Calendar, Clock,
-  User, Linkedin, FileText, DollarSign, AlignLeft,
+  User, Linkedin, FileText, DollarSign, AlignLeft, Search, Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -325,6 +325,39 @@ export function JobDetailPanel({
           {/* Contacts Tab */}
           {activeTab === 'Contacts' && (
             <div className="space-y-3">
+              {/* Recruiter search links */}
+              <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Find Recruiters</p>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(job.company + ' recruiter talent acquisition')}&origin=GLOBAL_SEARCH_HEADER`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-background text-xs font-medium hover:border-[#00BFA5] hover:text-[#00BFA5] transition-colors"
+                  >
+                    <Linkedin className="w-3.5 h-3.5" />
+                    LinkedIn
+                  </a>
+                  <a
+                    href={`https://app.apollo.io/#/people?q_organization_name=${encodeURIComponent(job.company)}&q_titles[]=recruiter&q_titles[]=talent+acquisition&q_titles[]=technical+recruiter`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-background text-xs font-medium hover:border-[#00BFA5] hover:text-[#00BFA5] transition-colors"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    Apollo
+                  </a>
+                  <a
+                    href={`https://hunter.io/search/${encodeURIComponent(job.company)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-background text-xs font-medium hover:border-[#00BFA5] hover:text-[#00BFA5] transition-colors"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Hunter
+                  </a>
+                </div>
+              </div>
               {job.contacts.map((contact, i) => (
                 <div key={i} className="rounded-lg border p-3 space-y-1">
                   <div className="flex items-center justify-between">

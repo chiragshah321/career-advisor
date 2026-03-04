@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { type Job, type JobStatus, useJobStore } from '@/store/jobStore'
+import { type Job, type JobStatus, type ContactStatus, useJobStore } from '@/store/jobStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -29,7 +29,7 @@ export function JobDetailPanel({
   open: boolean
   onClose: () => void
 }) {
-  const { updateJob, updateStatus, deleteJob, addContact, removeContact, setRecruiterOutreach, setFitScore } = useJobStore()
+  const { updateJob, updateStatus, deleteJob, addContact, removeContact, updateContact, setRecruiterOutreach, setFitScore } = useJobStore()
   const { profileOverride } = useSettingsStore()
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
   const [scoringFit, setScoringFit] = useState(false)
@@ -359,7 +359,7 @@ export function JobDetailPanel({
                 </div>
               </div>
               {job.contacts.map((contact, i) => (
-                <div key={i} className="rounded-lg border p-3 space-y-1">
+                <div key={i} className="rounded-lg border p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-muted-foreground" />
@@ -374,6 +374,20 @@ export function JobDetailPanel({
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
+                  <Select
+                    value={contact.contactStatus ?? 'not_contacted'}
+                    onValueChange={(v) => updateContact(job.id, i, { contactStatus: v as ContactStatus })}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-auto gap-1.5 px-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_contacted" className="text-xs">Not contacted</SelectItem>
+                      <SelectItem value="messaged" className="text-xs">Messaged</SelectItem>
+                      <SelectItem value="replied" className="text-xs">Replied</SelectItem>
+                      <SelectItem value="meeting_set" className="text-xs">Meeting set</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {contact.linkedinUrl && (
                     <a
                       href={contact.linkedinUrl}
@@ -433,7 +447,7 @@ function AddContactForm({
   onAdd,
 }: {
   jobId: string
-  onAdd: (c: { name: string; linkedinUrl: string; notes: string }) => void
+  onAdd: (c: { name: string; linkedinUrl: string; notes: string; contactStatus: ContactStatus }) => void
 }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -481,7 +495,7 @@ function AddContactForm({
           className="flex-1 bg-[#00BFA5] hover:bg-[#00BFA5]/90 text-white"
           onClick={() => {
             if (!name.trim()) return
-            onAdd({ name, linkedinUrl, notes })
+            onAdd({ name, linkedinUrl, notes, contactStatus: 'not_contacted' })
             setName('')
             setLinkedinUrl('')
             setNotes('')

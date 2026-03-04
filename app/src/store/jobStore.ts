@@ -6,10 +6,13 @@ import { getWeek, getYear } from 'date-fns'
 export type JobStatus = 'bookmarked' | 'applied' | 'interviewed' | 'offer' | 'archived'
 export type FitScore = 'strong' | 'good' | 'neutral' | 'weak'
 
+export type ContactStatus = 'not_contacted' | 'messaged' | 'replied' | 'meeting_set'
+
 export interface Contact {
   name: string
   linkedinUrl: string
   notes: string
+  contactStatus: ContactStatus
 }
 
 export interface ActivityEntry {
@@ -46,6 +49,7 @@ interface JobStore {
   deleteJob: (id: string) => void
   addContact: (jobId: string, contact: Contact) => void
   removeContact: (jobId: string, contactIndex: number) => void
+  updateContact: (jobId: string, contactIndex: number, patch: Partial<Contact>) => void
   logActivity: (jobId: string, action: string) => void
   setFitScore: (jobId: string, fitScore: FitScore, fitReasoning: string) => void
   setRecruiterOutreach: (jobId: string, outreach: string) => void
@@ -122,6 +126,16 @@ export const useJobStore = create<JobStore>()(
           jobs: state.jobs.map((j) =>
             j.id === jobId
               ? { ...j, contacts: j.contacts.filter((_, i) => i !== contactIndex) }
+              : j
+          ),
+        }))
+      },
+
+      updateContact: (jobId, contactIndex, patch) => {
+        set((state) => ({
+          jobs: state.jobs.map((j) =>
+            j.id === jobId
+              ? { ...j, contacts: j.contacts.map((c, i) => i === contactIndex ? { ...c, ...patch } : c) }
               : j
           ),
         }))

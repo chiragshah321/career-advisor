@@ -2,7 +2,7 @@ import { type Job, type JobStatus, useJobStore } from '@/store/jobStore'
 import { StatusBadge } from './StatusBadge'
 import { FitBadge } from './FitBadge'
 import { formatDistanceToNow } from 'date-fns'
-import { Building2, ExternalLink, Loader2 } from 'lucide-react'
+import { Building2, ExternalLink, Loader2, Star } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 const STATUSES: JobStatus[] = ['bookmarked', 'applied', 'interviewed', 'offer', 'archived']
 
 export function JobCard({ job, isScoring, onClick }: { job: Job; isScoring?: boolean; onClick: () => void }) {
-  const { updateStatus } = useJobStore()
+  const { updateStatus, toggleStar } = useJobStore()
 
   function handleStatusChange(status: string) {
     updateStatus(job.id, status as JobStatus)
@@ -33,15 +33,26 @@ export function JobCard({ job, isScoring, onClick }: { job: Job; isScoring?: boo
             <span className="text-xs truncate">{job.company}</span>
           </div>
         </div>
-        <a
-          href={job.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleStar(job.id) }}
+            className={cn(
+              'transition-colors',
+              job.starred ? 'text-amber-400' : 'opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-amber-400'
+            )}
+          >
+            <Star className={cn('w-3.5 h-3.5', job.starred && 'fill-amber-400')} />
+          </button>
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </div>
 
       <div className="flex items-center gap-1.5 mb-2">

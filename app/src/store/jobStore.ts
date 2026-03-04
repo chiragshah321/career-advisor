@@ -35,6 +35,7 @@ export interface Job {
   recruiterOutreach: string | null
   weekApplied: string | null
   description: string | null
+  starred: boolean
 }
 
 interface JobStore {
@@ -48,6 +49,7 @@ interface JobStore {
   logActivity: (jobId: string, action: string) => void
   setFitScore: (jobId: string, fitScore: FitScore, fitReasoning: string) => void
   setRecruiterOutreach: (jobId: string, outreach: string) => void
+  toggleStar: (jobId: string) => void
   clearAll: () => void
 }
 
@@ -148,6 +150,14 @@ export const useJobStore = create<JobStore>()(
         set((state) => ({
           jobs: state.jobs.map((j) =>
             j.id === jobId ? { ...j, recruiterOutreach: outreach } : j
+          ),
+        }))
+      },
+
+      toggleStar: (jobId) => {
+        set((state) => ({
+          jobs: state.jobs.map((j) =>
+            j.id === jobId ? { ...j, starred: !j.starred } : j
           ),
         }))
       },

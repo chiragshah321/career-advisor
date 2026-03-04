@@ -321,6 +321,7 @@ function AddJobDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => 
       followUpDate: null,
       dateApplied: null,
       recruiterOutreach: null,
+      starred: false,
     })
     toast.success('Job added!')
     onAdd(job)

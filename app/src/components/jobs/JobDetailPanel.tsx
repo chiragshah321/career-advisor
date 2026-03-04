@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { type Job, type JobStatus, useJobStore } from '@/store/jobStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -34,6 +34,7 @@ export function JobDetailPanel({
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
   const [scoringFit, setScoringFit] = useState(false)
   const [generatingOutreach, setGeneratingOutreach] = useState(false)
+  const outreachRef = useRef<HTMLDivElement>(null)
 
   if (!job) return null
 
@@ -57,7 +58,9 @@ export function JobDetailPanel({
     try {
       const result = await generateOutreach(job.title, job.company, job.url, profileOverride)
       setRecruiterOutreach(job.id, result)
+      setActiveTab('Outreach')
       toast.success('Outreach generated')
+      setTimeout(() => outreachRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to generate outreach')
     } finally {
@@ -279,7 +282,7 @@ export function JobDetailPanel({
               </Button>
 
               {job.recruiterOutreach && (
-                <div className="space-y-3">
+                <div ref={outreachRef} className="space-y-3">
                   {parseOutreachVariants(job.recruiterOutreach).map((variant, i) => (
                     <div key={i} className="rounded-lg border p-4">
                       <div className="flex items-center justify-between mb-2">

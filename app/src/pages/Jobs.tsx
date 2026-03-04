@@ -47,7 +47,8 @@ export default function Jobs() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterFit, setFilterFit] = useState<string>('all')
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
+  const selectedJob = selectedJobId ? (jobs.find((j) => j.id === selectedJobId) ?? null) : null
   const [addOpen, setAddOpen] = useState(false)
   const [scoringIds, setScoringIds] = useState<Set<string>>(new Set())
   const [draggingJob, setDraggingJob] = useState<Job | null>(null)
@@ -190,7 +191,7 @@ export default function Jobs() {
                     </div>
                     <KanbanColumn id={status} className="flex-1 rounded-b-lg border border-t-0 bg-muted/20 p-2 space-y-2 overflow-y-auto min-h-[400px]">
                       {colJobs.map((job) => (
-                        <DraggableCard key={job.id} job={job} isScoring={scoringIds.has(job.id)} onClick={() => setSelectedJob(job)} />
+                        <DraggableCard key={job.id} job={job} isScoring={scoringIds.has(job.id)} onClick={() => setSelectedJobId(job.id)} />
                       ))}
                       {colJobs.length === 0 && (
                         <div className="flex items-center justify-center h-24 text-xs text-muted-foreground">
@@ -226,7 +227,7 @@ export default function Jobs() {
               {filtered.map((job) => (
                 <div
                   key={job.id}
-                  onClick={() => setSelectedJob(job)}
+                  onClick={() => setSelectedJobId(job.id)}
                   className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:shadow-sm hover:border-[#00BFA5]/40 cursor-pointer transition-all"
                 >
                   <div className="flex-1 min-w-0">
@@ -263,7 +264,7 @@ export default function Jobs() {
       <JobDetailPanel
         job={selectedJob}
         open={!!selectedJob}
-        onClose={() => setSelectedJob(null)}
+        onClose={() => setSelectedJobId(null)}
       />
 
       {/* Add job dialog */}
